@@ -4,6 +4,7 @@
 
 TrainingAndTesting::TrainingAndTesting(){
 	this->miw = new MultipleImageWindow("MainWindow", 2, 2, cv::WINDOW_AUTOSIZE);
+	this->features_extractor = new ImageExtractFeatures();
 }
 
 void plotTrainingData(cv::Mat trainingData, cv::Mat labels, float *error=NULL){
@@ -74,7 +75,8 @@ cv::Ptr<cv::ml::SVM> TrainingAndTesting::trainAndTest(std::vector<std::string> &
 	std::vector<float> testData;
 	std::vector<float> testResponsesData;
 	int num_for_tests = 20;
-	ImageExtractFeatures *features_extractor = new ImageExtractFeatures();
+	//ImageExtractFeatures *features_extractor = new ImageExtractFeatures();
+	ImageExtractFeatures *features_extractor = this->features_extractor;    //To use custom extractors like the one in Fuzzing
 	for(int i = 0;i < dataset_sources.size();i++) {
 		features_extractor->readFolderAndExtractFeatures(dataset_sources[i], labels[i], 
 				num_for_tests, trainingData, responsesData, testData, testResponsesData, light_pattern_file);
@@ -136,3 +138,8 @@ void TrainingAndTesting::predict(cv::Mat img, std::string light_pattern_file, cv
 	cv::waitKey(0);
 }
 
+
+
+void TrainingAndTesting::setFeatureExtractor(ImageExtractFeatures *extractor){
+	this->features_extractor = extractor;
+}

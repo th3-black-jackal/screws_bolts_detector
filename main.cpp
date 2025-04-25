@@ -53,18 +53,18 @@ int main(int argc, const char **argv){
 	std::vector<int> labels;
 	ImageExtractFeatures *features_extractor = new ImageExtractFeatures();
 	features_extractor->extractFeatures(img);
-	//labels.push_back(0);
-	/*labels.push_back(1);
-	labels.push_back(2);*/
+	labels.push_back(0);
+	labels.push_back(1);
+	labels.push_back(2);
 
-	/*std::string DATASET_ROOT_DIR = "../Dataset/dataset_white_background/data/";
+	std::string DATASET_ROOT_DIR = "../Dataset/dataset_white_background/data/";
 	dataset_sources.push_back(DATASET_ROOT_DIR +  "nut/tuerca_%04d.pgm");
 	dataset_sources.push_back(DATASET_ROOT_DIR + "ring/arandela_%04d.pgm");
-	dataset_sources.push_back(DATASET_ROOT_DIR + "screw/tornillo_%04d.pgm");*/		
-	//dataset_sources.push_back("../Dataset/MvTecDataset/screw/train/good/");
-	//TrainingAndTesting *trainer = new TrainingAndTesting();
-	//cv::Ptr<cv::ml::SVM> svm_model = trainer->trainAndTest(dataset_sources, labels, light_pattern_file);
-	//trainer->predict(img, light_pattern_file, svm_model);
+	dataset_sources.push_back(DATASET_ROOT_DIR + "screw/tornillo_%04d.pgm");
+	dataset_sources.push_back("../Dataset/MvTecDataset/screw/train/good/");
+	TrainingAndTesting *trainer = new TrainingAndTesting();
+	cv::Ptr<cv::ml::SVM> svm_model = trainer->trainAndTest(dataset_sources, labels, light_pattern_file);
+	trainer->predict(img, light_pattern_file, svm_model);
 	return 0;
 }
 

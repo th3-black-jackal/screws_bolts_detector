@@ -19,7 +19,7 @@ class ImageExtractFeatures{
 		ImageExtractFeatures();
 		//The light pattern file can be empty, in that case we will create it from image, but the code is not ready yet
 		std::vector<std::vector<float>> extractFeatures(cv::Mat img, std::string light_pattern_file="", std::vector<int> *left=NULL, std::vector<int> *top=NULL);
-		bool readFolderAndExtractFeatures(std::string folder, int label, int num_for_tests, std::vector<float> &trainingData, 
+		virtual bool readFolderAndExtractFeatures(std::string folder, int label, int num_for_tests, std::vector<float> &trainingData, 
 				std::vector<int> &responsesData, std::vector<float> &testingData, std::vector<float> &testingResponsesData, std::string light_pattern_file);
 
 	private:
