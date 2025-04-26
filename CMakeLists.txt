@@ -23,3 +23,8 @@ SET(EXTRA_LIBS ${OpenCV_LIBS} training_and_testing image_extract_features
 	image_segmentation image_preprocessing multiple_image_window alist_adt run_tests alist_adt_test error ${Boost_LIBRARIES})
 ADD_EXECUTABLE(${PROJECT_NAME} main.cpp)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${EXTRA_LIBS})
+
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+add_subdirectory(fuzzing)
+endif()
