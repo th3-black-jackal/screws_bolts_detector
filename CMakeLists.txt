@@ -7,6 +7,10 @@ INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 MESSAGE ("OpenCV include: ${OpenCV_INCLUDE_DIRS}")
 FIND_PACKAGE(Boost 1.8 COMPONENTS ALL)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
+
+find_package(Python3 COMPONENTS Development REQUIRED)
+INCLUDE_DIRECTORIES(${Python3_INCLUDE_DIRS})
+
 #Add src as include dir to avoid linking errors with template classses
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/class_templates)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/tests)
