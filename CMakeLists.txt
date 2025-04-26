@@ -37,9 +37,13 @@ target_link_libraries(model_eval PUBLIC core_interfaces ${OpenCV_LIBS})
 add_library(plot_vis             src/ScatterPlotVisualizer.cpp)
 target_link_libraries(plot_vis   PUBLIC core_interfaces ${OpenCV_LIBS})
 
-add_library(pipeline             src/TrainingPipeline.cpp)
-target_link_libraries(pipeline 
-  PUBLIC
+add_library(feature_extract  include/extract/OpenCVFeatureExtractor.hpp
+                              src/OpenCVFeatureExtractor.cpp)
+target_link_libraries(feature_extract PUBLIC core_interfaces)
+
+add_library(pipeline    src/TrainingPipeline.cpp)
+target_link_libraries(pipeline PUBLIC
+        feature_extract
         core_interfaces
         model_train
         model_eval
@@ -51,7 +55,7 @@ SET(EXTRA_LIBS
         training_and_testing 
         image_extract_features
         image_segmentation
-         image_preprocessing
+        image_preprocessing
         multiple_image_window 
         alist_adt
         run_tests alist_adt_test 

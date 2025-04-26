@@ -16,7 +16,7 @@ TrainingPipeline::run(const std::vector<std::string>& datasetDirs,
     if(datasetDirs.size()!=labels.size())
         throw std::invalid_argument("datasetDirs and labels size mismatch");
 
-    std::vector<float> XtrainVals,XtestVals; std::vector<int> yTrainVals,yTestVals;
+    std::vector<float> XtrainVals,XtestVals, yTestVals; std::vector<int> yTrainVals;
     constexpr int kTestPerDir=20;
     for(std::size_t i=0;i<datasetDirs.size();++i)
         extractor_->extract(datasetDirs[i],labels[i],kTestPerDir,
@@ -36,6 +36,6 @@ TrainingPipeline::run(const std::vector<std::string>& datasetDirs,
     visualizer_->plot(Xtrain,ytrain,acc>0?std::optional<float>{acc}:std::nullopt);
 
     std::vector<float>().swap(XtrainVals);std::vector<int>().swap(yTrainVals);
-    std::vector<float>().swap(XtestVals); std::vector<int>().swap(yTestVals);
+    std::vector<float>().swap(XtestVals); std::vector<float>().swap(yTestVals);
     return model;
 }

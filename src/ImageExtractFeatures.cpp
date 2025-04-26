@@ -48,17 +48,17 @@ std::vector<std::vector<float>> ImageExtractFeatures::extractFeatures(cv::Mat im
 	return output;
 }
 
-bool ImageExtractFeatures::readFolderAndExtractFeatures(std::string folder, int label, int num_for_tests, 
-		std::vector<float> &trainingData, 
+bool ImageExtractFeatures::readFolderAndExtractFeatures(std::string folder, int label, 
+		int num_for_tests, std::vector<float> &trainingData, 
 		std::vector<int> &responsesData, std::vector<float> &testingData, 
 		std::vector<float> &testingResponsesData, std::string light_pattern_file){
-	cv::VideoCapture images;
-	std::cout<<"Start reading "<<folder<<std::endl;
-	std::cout<<"Num for tests: "<<num_for_tests<<std::endl;
-	if(images.open(folder) == false){
-		std::cout<<"Can not open the folder images"<<std::endl;
-		return false;
-	}
+			cv::VideoCapture images;
+			std::cout<<"Start reading "<<folder<<std::endl;
+			std::cout<<"Num for tests: "<<num_for_tests<<std::endl;
+			if(images.open(folder) == false){
+				std::cout<<"Can not open the folder images"<<std::endl;
+				return false;
+			}
 		
 	cv::Mat frame;
 	int img_index = 0;

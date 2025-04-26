@@ -4,11 +4,16 @@
 #include <vector>
 #include <TrainingAndTesting.hpp>
 #include <AListADT.hpp>
-#include <run_tests.cpp>
+#include "run_tests.cpp"
 #include <boost/lambda/lambda.hpp>
 #include <boost/json.hpp>
 #include <iomanip>
-
+#include "pipeline/TrainingPipeline.hpp"
+#include "train/Chi2SVMTrainer.hpp"
+#include "vis/ScatterPlotVisualizer.hpp"
+#include "eval/SimpleAccuracyEvaluator.hpp"
+#include "extract/OpenCVFeatureExtractor.hpp"
+#include "ImageExtractFeatures.hpp"
 
 /*
  * Please Allah, 
@@ -244,10 +249,15 @@ int main(int argc, const char **argv){
 	dataset_sources.push_back(DATASET_ROOT_DIR +  "nut/tuerca_%04d.pgm");
 	dataset_sources.push_back(DATASET_ROOT_DIR + "ring/arandela_%04d.pgm");
 	dataset_sources.push_back(DATASET_ROOT_DIR + "screw/tornillo_%04d.pgm");
-	
-	TrainingAndTesting *trainer = new TrainingAndTesting();
-	cv::Ptr<cv::ml::SVM> svm_model = trainer->trainAndTest(dataset_sources, labels, light_pattern_file);
-	trainer->predict(img, light_pattern_file, svm_model);
+
+	auto extractor	= std::make_shared<OpenCVFeatureExtractor>();
+	auto trainer	= std::make_shared<Chi2SVMTrainer>();
+	auto evaluator	= std::make_shared<SimpleAccuracyEvaluator>();
+	auto visualizer	= std::make_shared<ScatterPlotVisualizer>();
+
+	TrainingPipeline pipeline(extractor, trainer, evaluator, visualizer);
+	auto svm_model = pipeline.run(dataset_sources, labels, light_pattern_file);
+	//trainer->predict(img, light_pattern_file, svm_model);
 	return 0;
 }
 
