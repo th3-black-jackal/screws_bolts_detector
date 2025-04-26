@@ -18,6 +18,7 @@ class TrainingAndTesting{
 		cv::Ptr<cv::ml::SVM> trainAndTest(std::vector<std::string> &dataset_sources, std::vector<int> &labels, std::string light_pattern_file);
 		void predict(cv::Mat img, std::string light_pattern_file, cv::Ptr<cv::ml::SVM> svm);
 		void setFeatureExtractor(ImageExtractFeatures *extractor);
+		void plotTrainingData(cv::Mat trainingData, cv::Mat labels, float *error=NULL);
 	private:
 		MultipleImageWindow *miw;
 		ImageExtractFeatures *features_extractor;

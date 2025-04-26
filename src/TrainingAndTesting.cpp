@@ -1,3 +1,5 @@
+#include <cassert>
+#include <stdexcept>
 #include <TrainingAndTesting.hpp>
 
 
@@ -7,7 +9,7 @@ TrainingAndTesting::TrainingAndTesting(){
 	this->features_extractor = new ImageExtractFeatures();
 }
 
-void plotTrainingData(cv::Mat trainingData, cv::Mat labels, float *error=NULL){
+void TrainingAndTesting::plotTrainingData(cv::Mat trainingData, cv::Mat labels, float *error){
 	cv::Scalar green(0, 255, 0), blue(255, 0, 0), red(0, 0, 255);
 	float area_max, ar_max, area_min, ar_min;
 	area_max = ar_max = 0;
@@ -68,46 +70,74 @@ void plotTrainingData(cv::Mat trainingData, cv::Mat labels, float *error=NULL){
 /*
  * TODO: Use dictionary with key is the label and the value is the dataset source.
  */
-cv::Ptr<cv::ml::SVM> TrainingAndTesting::trainAndTest(std::vector<std::string> &dataset_sources, std::vector<int> &labels, 
+cv::Ptr<cv::ml::SVM> TrainingAndTesting::trainAndTest(std::vector<std::string> &dataset_sources,
+				std::vector<int> &labels, 
 				std::string light_pattern_file){
-				cv::Ptr<cv::ml::SVM> svm;
-				std::vector<float> trainingData;
-				std::vector<int> responsesData;
-				std::vector<float> testData;
-				std::vector<float> testResponsesData;
-	int num_for_tests = 20;
+					if(dataset_sources.size() != labels.size()){
+						throw std::invalid_argument("dataset_sources and labels must have identical lengths");
+					}
+					if(dataset_sources.empty()){
+						throw std::runtime_error("No dataset sources supplied");
+					}
+					cv::Ptr<cv::ml::SVM> svm;
+					std::vector<float> trainingData;
+					std::vector<int> responsesData;
+					std::vector<float> testData;
+					std::vector<float> testResponsesData;
+	constexpr int kNumForTests = 20;
 	//ImageExtractFeatures *features_extractor = new ImageExtractFeatures();
 	ImageExtractFeatures *features_extractor = this->features_extractor;    //To use custom extractors like the one in Fuzzing
-	for(int i = 0;i < dataset_sources.size();i++) {
+	for(std::size_t i = 0;i < dataset_sources.size();++i) {
 		features_extractor->readFolderAndExtractFeatures(dataset_sources[i], labels[i], 
-				num_for_tests, trainingData, responsesData, testData, testResponsesData, light_pattern_file);
+				kNumForTests, trainingData, 
+				responsesData, testData, 
+				testResponsesData, light_pattern_file);
 	}
+	if(trainingData.empty()){
+		throw std::runtime_error("Feature extractor produced zero samples");
+	}
+	assert((trainingData.size() & 1u) == 0 && "Exact feature vector must contain exactly two floats");
+
+
 	std::cout<<"Num of traingin examples: "<<responsesData.size()<<std::endl;
 	std::cout<<"Num of testing examples: "<<testResponsesData.size()<<std::endl;
-	cv::Mat trainingDataMat(trainingData.size()/2, 2, CV_32FC1, &trainingData[0]);
-	cv::Mat responses(responsesData.size(), 1, CV_32SC1, &responsesData[0]);
-	cv::Mat testDataMat(testData.size() / 2, 2, CV_32FC1, &testData[0]);
-	cv::Mat testResponses(testResponsesData.size(), 1, CV_32FC1, &testResponsesData[0]);
+
+	const int trainRows = static_cast<int>(trainingData.size() / 2);
+	const int testRows = static_cast<int>(testData.size() / 2);
+
+
+	cv::Mat trainingDataMat(trainRows, 2, CV_32FC1, trainingData.data());
+	cv::Mat responsesMat(static_cast<int>(responsesData.size()), 1, CV_32SC1, responsesData.data());
+
+	cv::Mat testDataMat(testRows, 2, CV_32FC1, testData.data());
+	cv::Mat testResponses(static_cast<int>(testResponsesData.size()), 1, CV_32FC1, &testResponsesData[0]);
+
 	svm = cv::ml::SVM::create();
 	svm->setType(cv::ml::SVM::C_SVC);
 	svm->setKernel(cv::ml::SVM::CHI2);
 	svm->setTermCriteria(cv::TermCriteria(cv::TermCriteria::MAX_ITER, 100, 1e-6));
-	std::cout<<"Start traingin"<<std::endl;	
-	svm->train(trainingDataMat, cv::ml::ROW_SAMPLE, responses);
-	if(testResponsesData.size() > 0){
-		std::cout<<"Evaluation"<<std::endl;
-		std::cout<<"=========="<<std::endl;
+	std::cout<<"Start training ("<<trainRows << " samples)\n";
+	svm->train(trainingDataMat, cv::ml::ROW_SAMPLE, responsesMat);
+
+	if(!testResponsesData.empty()){
+		std::cout<<"Evaluation"<<testRows<< " samples)\n";
 		cv::Mat testPredict;
 		svm->predict(testDataMat, testPredict);
 		std::cout<<"Prediction done"<<std::endl;
 		cv::Mat errorMat = testPredict != testResponses;
-		float error = 100.0f * countNonZero(errorMat) / testResponsesData.size();
-		std::cout<<"Error: "<<error<<"\%"<<std::endl;
-		plotTrainingData(trainingDataMat, responses, &error);
-	}
-	else {
-		plotTrainingData(trainingDataMat, responses);
-	}
+		float error = 100.0f * static_cast<float>(cv::countNonZero(errorMat)) / 
+		static_cast<float>(testResponsesData.size());
+		std::cout<<"Error: "<<error<<"\%\n";
+	#ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+        plotTrainingData(trainingDataMat, responsesMat, &error);
+#endif
+    }
+#ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+    else
+    {
+        plotTrainingData(trainingDataMat, responsesMat);
+    }
+#endif
 	return svm;
 }
 

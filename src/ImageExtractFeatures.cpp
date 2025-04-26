@@ -80,7 +80,6 @@ bool ImageExtractFeatures::readFolderAndExtractFeatures(std::string folder, int 
 			}
 		}
 		img_index++;
-
 	}
 	return true;
 }
