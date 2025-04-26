@@ -5,7 +5,6 @@
 
 
 class MockImageExtractorFeatures : public ImageExtractFeatures{
- 
     public:
         bool readFolderAndExtractFeatures(
             std::string folder, int label, int num_for_tests,
@@ -25,6 +24,69 @@ class MockImageExtractorFeatures : public ImageExtractFeatures{
                 }
             }
 };
+
+void handlException(const std::string &context){
+    try{
+        throw;
+    } catch(const cv::Exception &e) {
+         std::cerr << "[OpenCV Exception - " << context << "]\n"
+                  << "Message: " << e.what() << "\n"
+                  << "Code: " << e.code << "\n"
+                  << "Function: " << e.func << "\n"
+                  << "File: " << e.file << "\n"
+                  << "Line: " << e.line << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "[Standard Exception - " << context << "] " << e.what() << std::endl;
+    } catch (...) {
+        std::cerr << "[Unknown Exception - " << context << "] Unhandled error during fuzzing." << std::endl;
+    }
+}
+
+void fuzzLabelMismatch(TrainingAndTesting &tnt, FuzzedDataProvider &fdp){
+    int num_dirs = fdp.ConsumeIntegralInRange<int>(1, 5);
+    std::vector<std::string> dataset_sources;
+    std::vector<int> labels;
+    for(int i=0;i < num_dirs; ++i){
+        dataset_sources.push_back(fdp.ConsumeRandomLengthString(20));
+    } 
+    int label_count = fdp.ConsumeIntegralInRange<int>(1, num_dirs + 2);
+    for(int i=0; i < label_count;++i){
+        labels.push_back(fdp.ConsumeIntegral<int>());
+    }
+    std::string light_pattern_file = fdp.ConsumeRandomLengthString(64);
+    try{
+        tnt.trainAndTest(dataset_sources, labels, light_pattern_file);
+    }  catch (...) {
+        handlException("fuzzLabMismatch");
+    }
+}
+
+void fuzzExtremeLabels(TrainingAndTesting &tnt, FuzzedDataProvider &fdp){
+    int num_dirs = fdp.ConsumeIntegralInRange<int>(1, 5);
+    std::vector<std::string> dataset_sources;
+    std::vector<int> labels;
+      for (int i = 0; i < num_dirs; ++i) {
+        dataset_sources.push_back(fdp.ConsumeRandomLengthString(20));
+        labels.push_back(fdp.ConsumeIntegralInRange<int>(-10000, 10000));
+    }
+    std::string light_pattern_file = fdp.ConsumeRandomLengthString(64);
+    try {
+        tnt.trainAndTest(dataset_sources, labels, light_pattern_file);
+    }  catch (...) {
+        handlException("fuzzExtremeLabels");
+    }
+}
+
+void fuzzEmptyInputs(TrainingAndTesting &tnt){
+    std::vector<std::string> dataset_sources;
+    std::vector<int> labels;
+    std::string light_pattern_file;
+     try {
+        tnt.trainAndTest(dataset_sources, labels, light_pattern_file);
+    } catch (const cv::Exception& e) {
+        handlException("fuzzEmptyInputs");
+    }
+}
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size){
     if(size > 4096) return 0; //to mitigate fuzzer out memory 
