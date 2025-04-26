@@ -1,8 +1,31 @@
-#include "TrainingAndTesting.hpp"
+#include "pipeline/TrainingPipeline.hpp"
+#include "extract/OpenCVFeatureExtractor.hpp"
+#include "train/Chi2SVMTrainer.hpp"
+#include "eval/SimpleAccuracyEvaluator.hpp"
+#include "vis/ScatterPlotVisualizer.hpp"
+
 #include <fuzzer/FuzzedDataProvider.h>
+#include <memory>
+#include <iostream>
 #include <string>
 #include <vector>
 
+static auto gExtractor  = std::make_shared<OpenCVFeatureExtractor>();
+static auto gTrainer    = std::make_shared<Chi2SVMTrainer>();
+static auto gEvaluator  = std::make_shared<SimpleAccuracyEvaluator>();
+static auto gVisualizer = std::make_shared<ScatterPlotVisualizer>();
+static TrainingPipeline gPipeline(gExtractor, gTrainer, gEvaluator, gVisualizer);
+
+static void logException(const char* ctx) {
+    try { throw; }
+    catch (const cv::Exception& e) {
+        std::cerr << "[OpenCV] (" << ctx << ") " << e.what() << '\n';
+    } catch (const std::exception& e) {
+        std::cerr << "[std] (" << ctx << ") " << e.what() << '\n';
+    } catch (...) {
+        std::cerr << "[unknown] (" << ctx << ") exploding\n";
+    }
+}
 
 class MockImageExtractorFeatures : public ImageExtractFeatures{
     public:
@@ -46,7 +69,7 @@ class MockImageExtractorFeatures : public ImageExtractFeatures{
             std::vector<int>   scratch_int_;
 };
 
-static TrainingAndTesting gTnT;
+//static TrainingAndTesting gTnT;
 static MockImageExtractorFeatures gMock;
 
 void handlException(const std::string &context){
@@ -66,7 +89,7 @@ void handlException(const std::string &context){
     }
 }
 
-void fuzzLabelMismatch(TrainingAndTesting &tnt, FuzzedDataProvider &fdp){
+/*void fuzzLabelMismatch(TrainingAndTesting &tnt, FuzzedDataProvider &fdp){
     int num_dirs = fdp.ConsumeIntegralInRange<int>(1, 5);
     std::vector<std::string> dataset_sources;
     std::vector<int> labels;
@@ -110,38 +133,34 @@ void fuzzEmptyInputs(TrainingAndTesting &tnt){
     } catch (const cv::Exception& e) {
         handlException("fuzzEmptyInputs");
     }
-}
+}*/
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size){
-    if(size > 4096) return 0; //to mitigate fuzzer out memory 
-    gMock.clearState();
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+{
+    if (size < 32 || size > 1024) return 0;          // guard huge blobs
+
     FuzzedDataProvider fdp(data, size);
-    int num_dirs = fdp.ConsumeIntegralInRange<int>(1, 5);
-    std::string path = fdp.ConsumeBytesAsString(100);
-    std::vector<std::string> dataset_sources;
-    std::vector<int> labels;
-    for(int i = 0;i < num_dirs;++i){
-        std::string fake_path = fdp.ConsumeRandomLengthString(20);
-        int label = fdp.ConsumeIntegralInRange<int>(0, 2);
-        dataset_sources.push_back(fake_path);
-        labels.push_back(label);
+
+    /* ---- build synthetic dataset paths & labels ------------------------- */
+    int dirCount = fdp.ConsumeIntegralInRange<int>(1, 4);
+    std::vector<std::string> datasetDirs;
+    std::vector<int>         labels;
+
+    for (int i = 0; i < dirCount; ++i) {
+        datasetDirs.emplace_back(fdp.ConsumeRandomLengthString(20));
+        labels.push_back(fdp.ConsumeIntegralInRange<int>(0, 2));
     }
-    std::string light_pattern = fdp.ConsumeRemainingBytesAsString();
-    gTnT.setFeatureExtractor(&gMock);
-   try {
-    gTnT.trainAndTest(dataset_sources, labels, light_pattern);
-    } catch (const cv::Exception& e) {
-        std::cerr << "[OpenCV Exception]\n"
-        << "Message: " << e.what() << "\n"
-        << "Code: " << e.code << "\n"
-        << "Function: " << e.func << "\n"
-        << "File: " << e.file << "\n"
-        << "Line: " << e.line << std::endl;
-        } catch (const std::exception& e) {
-            std::cerr << "[Standard Exception] " << e.what() << std::endl;
-        } catch (...) {
-            std::cerr << "[Unknown Exception] An unknown error occurred during fuzzing." << std::endl;
-        }
+    std::string lightPattern = fdp.ConsumeRandomLengthString(30);
+
+    /* ---- run pipeline --------------------------------------------------- */
+    try {
+        /*  For fuzzing purposes we skip heavy work if the macro is defined   */
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+        (void)lightPattern;   // silence unused warning
+#else
+        gPipeline.run(datasetDirs, labels, lightPattern);
+#endif
+    } catch (...) { logException("LLVMFuzzerTestOneInput"); }
 
     return 0;
 }

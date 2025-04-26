@@ -19,7 +19,6 @@ target_link_libraries(fuzz_train PRIVATE
     ${Boost_LIBRARIES}
     ${Python3_LIBRARIES}
     pipeline
-    training_and_testing
     image_extract_features
     image_segmentation
     image_preprocessing
