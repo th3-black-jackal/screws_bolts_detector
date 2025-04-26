@@ -68,12 +68,13 @@ void plotTrainingData(cv::Mat trainingData, cv::Mat labels, float *error=NULL){
 /*
  * TODO: Use dictionary with key is the label and the value is the dataset source.
  */
-cv::Ptr<cv::ml::SVM> TrainingAndTesting::trainAndTest(std::vector<std::string> &dataset_sources, std::vector<int> &labels, std::string light_pattern_file){
-	cv::Ptr<cv::ml::SVM> svm;
-	std::vector<float> trainingData;
-	std::vector<int> responsesData;
-	std::vector<float> testData;
-	std::vector<float> testResponsesData;
+cv::Ptr<cv::ml::SVM> TrainingAndTesting::trainAndTest(std::vector<std::string> &dataset_sources, std::vector<int> &labels, 
+				std::string light_pattern_file){
+				cv::Ptr<cv::ml::SVM> svm;
+				std::vector<float> trainingData;
+				std::vector<int> responsesData;
+				std::vector<float> testData;
+				std::vector<float> testResponsesData;
 	int num_for_tests = 20;
 	//ImageExtractFeatures *features_extractor = new ImageExtractFeatures();
 	ImageExtractFeatures *features_extractor = this->features_extractor;    //To use custom extractors like the one in Fuzzing

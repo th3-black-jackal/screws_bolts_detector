@@ -6,24 +6,48 @@
 
 class MockImageExtractorFeatures : public ImageExtractFeatures{
     public:
+        MockImageExtractorFeatures() = default;
         bool readFolderAndExtractFeatures(
             std::string folder, int label, int num_for_tests,
             std::vector<float> &trainingData, std::vector<int> &responsesData,
             std::vector<float> &testingData, std::vector<float> &testingResponsesData, 
             std::string light_pattern_file) override {
-                for(int i = 0;i < 10; ++i){
-                    float area = static_cast<float>(i + 1);
+                scratch_float_.reserve(22);   
+                scratch_int_.reserve(12);
+
+                for (int i = 0; i < 10; ++i) {
+                    float area         = static_cast<float>(i + 1);
                     float aspect_ratio = 1.0f + 0.1f * i;
                     trainingData.push_back(area);
                     trainingData.push_back(aspect_ratio);
+
+                    scratch_float_.push_back(area);
+                    scratch_float_.push_back(aspect_ratio);
+                    responsesData.push_back(label);
+                    scratch_int_.push_back(label);
                 }
-                for(int i = 0;i < num_for_tests; ++i){
+
+                for (int i = 0; i < num_for_tests; ++i) {
                     testingData.push_back(2.0f);
                     testingData.push_back(1.5f);
                     testingResponsesData.push_back(label);
+
+                    scratch_float_.push_back(2.0f);
+                    scratch_float_.push_back(1.5f);
+                    scratch_int_.push_back(label);
                 }
             }
+        void clearState() noexcept {
+                std::vector<float>().swap(scratch_float_);
+                std::vector<int>().swap(scratch_int_);
+                }
+    private:
+            std::vector<float> scratch_float_;
+            std::vector<int>   scratch_int_;
 };
+
+static TrainingAndTesting gTnT;
+static MockImageExtractorFeatures gMock;
 
 void handlException(const std::string &context){
     try{
@@ -55,7 +79,7 @@ void fuzzLabelMismatch(TrainingAndTesting &tnt, FuzzedDataProvider &fdp){
     }
     std::string light_pattern_file = fdp.ConsumeRandomLengthString(64);
     try{
-        tnt.trainAndTest(dataset_sources, labels, light_pattern_file);
+        gTnT.trainAndTest(dataset_sources, labels, light_pattern_file);
     }  catch (...) {
         handlException("fuzzLabMismatch");
     }
@@ -71,7 +95,7 @@ void fuzzExtremeLabels(TrainingAndTesting &tnt, FuzzedDataProvider &fdp){
     }
     std::string light_pattern_file = fdp.ConsumeRandomLengthString(64);
     try {
-        tnt.trainAndTest(dataset_sources, labels, light_pattern_file);
+        gTnT.trainAndTest(dataset_sources, labels, light_pattern_file);
     }  catch (...) {
         handlException("fuzzExtremeLabels");
     }
@@ -82,7 +106,7 @@ void fuzzEmptyInputs(TrainingAndTesting &tnt){
     std::vector<int> labels;
     std::string light_pattern_file;
      try {
-        tnt.trainAndTest(dataset_sources, labels, light_pattern_file);
+        gTnT.trainAndTest(dataset_sources, labels, light_pattern_file);
     } catch (const cv::Exception& e) {
         handlException("fuzzEmptyInputs");
     }
@@ -90,6 +114,7 @@ void fuzzEmptyInputs(TrainingAndTesting &tnt){
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size){
     if(size > 4096) return 0; //to mitigate fuzzer out memory 
+    gMock.clearState();
     FuzzedDataProvider fdp(data, size);
     int num_dirs = fdp.ConsumeIntegralInRange<int>(1, 5);
     std::string path = fdp.ConsumeBytesAsString(100);
@@ -102,11 +127,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size){
         labels.push_back(label);
     }
     std::string light_pattern = fdp.ConsumeRemainingBytesAsString();
-    TrainingAndTesting tnt;
-    auto *mocked = new MockImageExtractorFeatures();
-    tnt.setFeatureExtractor(mocked);
+    gTnT.setFeatureExtractor(&gMock);
    try {
-    tnt.trainAndTest(dataset_sources, labels, light_pattern);
+    gTnT.trainAndTest(dataset_sources, labels, light_pattern);
     } catch (const cv::Exception& e) {
         std::cerr << "[OpenCV Exception]\n"
         << "Message: " << e.what() << "\n"
