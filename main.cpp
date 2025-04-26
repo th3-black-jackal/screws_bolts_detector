@@ -201,7 +201,7 @@ int main(int argc, const char **argv){
 		parser.printMessage();
 		return 0;
 	}
-	
+	runTests();
 	cv::String img_file  = parser.get<cv::String>(0);
 	light_pattern_file = parser.get<cv::String>(1);
 	int method_light = parser.get<int>("lightMethod");
@@ -221,6 +221,9 @@ int main(int argc, const char **argv){
 	}
 	std::vector<std::string> dataset_sources;
 	std::vector<int> labels;
+	labels.push_back(0);
+	labels.push_back(1);
+	labels.push_back(2);
 	auto const jv = readJSONFile("test_json.json");
 	auto const obj = jv.get_object();
 
@@ -236,6 +239,15 @@ int main(int argc, const char **argv){
 		std::cout<<value<<" ";
 	}
 	std::cout<<std::endl;
+
+	std::string DATASET_ROOT_DIR = "../Dataset/dataset_white_background/data/";
+	dataset_sources.push_back(DATASET_ROOT_DIR +  "nut/tuerca_%04d.pgm");
+	dataset_sources.push_back(DATASET_ROOT_DIR + "ring/arandela_%04d.pgm");
+	dataset_sources.push_back(DATASET_ROOT_DIR + "screw/tornillo_%04d.pgm");
+	
+	TrainingAndTesting *trainer = new TrainingAndTesting();
+	cv::Ptr<cv::ml::SVM> svm_model = trainer->trainAndTest(dataset_sources, labels, light_pattern_file);
+	trainer->predict(img, light_pattern_file, svm_model);
 	return 0;
 }
 
