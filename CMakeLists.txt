@@ -10,6 +10,14 @@ FIND_PACKAGE(Boost 1.8 COMPONENTS ALL)
 
 FIND_PACKAGE(Python3 COMPONENTS Development REQUIRED)
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(OPEN62541 REQUIRED open62541)
+
+# Include directories and libraries
+include_directories(${OPEN62541_INCLUDE_DIRS})
+link_directories(${OPEN62541_LIBRARY_DIRS})
+add_definitions(${OPEN62541_CFLAGS_OTHER})
+
 # ── Include paths ────────────────────────────────────────────────────────
 INCLUDE_DIRECTORIES(
     ${OpenCV_INCLUDE_DIRS}
@@ -48,7 +56,8 @@ target_link_libraries(pipeline PUBLIC
         model_train
         model_eval
         plot_vis
-        ${OpenCV_LIBS})
+        ${OpenCV_LIBS}
+        ${OPEN62541_LIBRARIES})
 
 SET(EXTRA_LIBS
         pipeline                                  
