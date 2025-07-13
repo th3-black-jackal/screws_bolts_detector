@@ -24,6 +24,7 @@ INCLUDE_DIRECTORIES(
     ${Boost_INCLUDE_DIRS}
     ${Python3_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/src/core
     ${PROJECT_SOURCE_DIR}/class_templates
     ${PROJECT_SOURCE_DIR}/tests
     ${PROJECT_SOURCE_DIR}/tests/include
@@ -35,6 +36,8 @@ ADD_SUBDIRECTORY(tests/src)
 
 ADD_LIBRARY(core_interfaces INTERFACE)
 TARGET_INCLUDE_DIRECTORIES(core_interfaces INTERFACE ${PROJECT_SOURCE_DIR}/include)
+
+
 
 add_library(model_train          src/Chi2SVMTrainer.cpp)
 target_link_libraries(model_train PUBLIC core_interfaces ${OpenCV_LIBS})
@@ -50,6 +53,8 @@ add_library(feature_extract  include/extract/OpenCVFeatureExtractor.hpp
 target_link_libraries(feature_extract PUBLIC core_interfaces)
 
 add_library(pipeline    src/TrainingPipeline.cpp)
+
+
 target_link_libraries(pipeline PUBLIC
         feature_extract
         core_interfaces
