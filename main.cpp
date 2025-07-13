@@ -114,19 +114,7 @@ extern "C" void onWrite(UA_Server *server,
 
 
 int main(int argc, const char **argv){
-	cv::CommandLineParser parser(argc, argv, keys);
-	parser.about("Nasser implementation for object classification");
-	if(parser.has("help")){
-		parser.printMessage();
-		return 0;
-	}
 	runTests();
-	
-	if(!parser.check()){
-		parser.printErrors();
-		return 0;
-	}
-
 	std::signal(SIGINT, stopHandler);
     std::signal(SIGTERM, stopHandler);
 
