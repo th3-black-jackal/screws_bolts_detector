@@ -77,7 +77,7 @@ SET(EXTRA_LIBS
         ${OpenCV_LIBS} 
         ${Boost_LIBRARIES} 
         ${Python3_LIBRARIES})
-ADD_EXECUTABLE(${PROJECT_NAME} main.cpp)
+ADD_EXECUTABLE(${PROJECT_NAME} src/OpcUaServer.cpp main.cpp)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PRIVATE ${EXTRA_LIBS})
 
 
