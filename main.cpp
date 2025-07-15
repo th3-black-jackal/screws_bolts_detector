@@ -30,12 +30,6 @@
  */
 
 
-static volatile UA_Boolean running = true;
-static volatile UA_Boolean gMachineRunning = false; 
-static UA_NodeId           gRunNodeId;
-
-
-
 static OpcUaServer *g_server = nullptr;
 
 static void stopHandler(int)
@@ -101,29 +95,7 @@ void startMachine()
     }
 }
 
-extern "C" void onWrite(UA_Server *server,
-                        const UA_NodeId *sessionId, void *sessionContext,
-                        const UA_NodeId *nodeId, void *nodeContext,
-                        const UA_NumericRange *range, const UA_DataValue *data)
-{
-    (void)server; (void)sessionId; (void)sessionContext;
-    (void)nodeId; (void)nodeContext; (void)range;
 
-    if (!data || !data->hasValue)
-        return;
-
-    if (UA_Variant_isScalar(&data->value) &&
-        data->value.type == &UA_TYPES[UA_TYPES_STRING]) {
-
-        UA_String *uaStr = static_cast<UA_String*>(data->value.data);
-        std::string cmd(reinterpret_cast<char*>(uaStr->data), uaStr->length);
-        std::cout << "Client says: " << cmd << std::endl;
-        std::cout.flush();
-		startMachine();
-    } else {
-        std::puts("Client wrote a non-string value");
-    }
-}
 
 
 int main(int argc, const char **argv){
